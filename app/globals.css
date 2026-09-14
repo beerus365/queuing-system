@@ -1,26 +1,66 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #e7e5e1;
+  --foreground2: #ffffff;
+  --foreground3: #192626;
+  --foreground: #D50032;
+  --button: #B22234;
+  --hover: #A50034;
+  --text-color: #020202;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-poppins);
   --font-mono: var(--font-geist-mono);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
   }
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--background);
+  color: var(--text-color);
+  font-family: var(--font-poppins), sans-serif;
+}
+
+.card {
+  width: auto;
+  min-width: 0;
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--foreground2);
+  border-radius: 0.5rem;
+  padding: 1rem;
+}
+
+.card p {
+  font-size: 0.875rem;
+}
+
+.card h1 {
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+@media (min-width: 640px) {
+  .card {
+    padding: 1.5rem;
+  }
+
+  .card p {
+    font-size: 1rem;
+  }
+
+  .card h1 {
+    font-size: 2rem;
+    font-weight: bold;
+  }
 }
