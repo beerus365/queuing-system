@@ -8,10 +8,10 @@ type QueueTicket = {
 
 async function sendEmail(to: string, subject: string, text: string) {
   const apiKey = process.env.RESEND_API_KEY
-  const from = process.env.RESEND_FROM_EMAIL ?? 'onboarding@resend.dev'
+  const from = process.env.RESEND_FROM_EMAIL
 
-  if (!apiKey) {
-    throw new Error('RESEND_API_KEY must be configured.')
+  if (!apiKey || !from) {
+    throw new Error('RESEND_API_KEY and RESEND_FROM_EMAIL must be configured.')
   }
 
   const response = await fetch('https://api.resend.com/emails', {
@@ -41,28 +41,24 @@ export async function notifyTicketsNearTurn() {
     throw new Error(`Could not find tickets near turn: ${error.message}`)
   }
 
-  const ticketsToNotify = (pendingTickets as QueueTicket[]).filter(
-    (ticket, index) => index === 2 && ticket.email && !ticket.near_turn_notified
+  const ticket = (pendingTickets as QueueTicket[])[2]
+
+  if (!ticket?.email || ticket.near_turn_notified) {
+    return
+  }
+
+  await sendEmail(
+    ticket.email,
+    `Your queue ticket Q-${ticket.ticket_number} is nearly ready`,
+    `Hello ${ticket.name},\n\nThere are two people ahead of you. Please return to the service area soon.\n\nYour ticket: Q-${ticket.ticket_number}`
   )
 
-  for (const ticket of ticketsToNotify) {
-    try {
-      await sendEmail(
-        ticket.email!,
-        `Your queue ticket Q-${ticket.ticket_number} is nearly ready`,
-        `Hello ${ticket.name},\n\nThere are two people ahead of you. Please return to the service area soon.\n\nYour ticket: Q-${ticket.ticket_number}`
-      )
+  const { error: flagError } = await supabase
+    .from('user')
+    .update({ near_turn_notified: true })
+    .eq('number', ticket.number)
 
-      const { error: flagError } = await supabase
-        .from('user')
-        .update({ near_turn_notified: true })
-        .eq('number', ticket.number)
-
-      if (flagError) {
-        console.error(`Could not mark ticket Q-${ticket.ticket_number} as notified:`, flagError)
-      }
-    } catch (notificationError) {
-      console.error(`Could not email ticket Q-${ticket.ticket_number}:`, notificationError)
-    }
+  if (flagError) {
+    throw new Error(`Email sent, but ticket notification status could not be saved: ${flagError.message}`)
   }
 }

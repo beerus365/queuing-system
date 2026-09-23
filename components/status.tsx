@@ -58,7 +58,11 @@ export async function serveNextPending(_formData: FormData): Promise<void> {
     }
 
     console.log('Ticket status updated:', updatedTicket)
-    await notifyTicketsNearTurn()
+    try {
+        await notifyTicketsNearTurn()
+    } catch (notificationError) {
+        console.error('Queue email notification failed:', notificationError)
+    }
     revalidatePath('/admin/main')
     revalidatePath('/', 'layout')
 }

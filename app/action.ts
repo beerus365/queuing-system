@@ -64,7 +64,12 @@ export async function createQueue(
 
   revalidatePath('/', 'layout')
   revalidatePath('/admin/main')
-  await notifyTicketsNearTurn()
+
+  try {
+    await notifyTicketsNearTurn()
+  } catch (notificationError) {
+    console.error('Queue email notification failed:', notificationError)
+  }
 
   return {
     ticketNumber: createTicketNumber(data.ticket_number),
