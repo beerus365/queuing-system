@@ -53,12 +53,16 @@ export async function notifyTicketsNearTurn() {
         `Hello ${ticket.name},\n\nThere are two people ahead of you. Please return to the service area soon.\n\nYour ticket: Q-${ticket.ticket_number}`
       )
 
-      await supabase
+      const { error: flagError } = await supabase
         .from('user')
         .update({ near_turn_notified: true })
         .eq('number', ticket.number)
+
+      if (flagError) {
+        console.error(`Could not mark ticket Q-${ticket.ticket_number} as notified:`, flagError)
+      }
     } catch (notificationError) {
-      console.error(`Could not notify ticket Q-${ticket.ticket_number}:`, notificationError)
+      console.error(`Could not email ticket Q-${ticket.ticket_number}:`, notificationError)
     }
   }
 }
