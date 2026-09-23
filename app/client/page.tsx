@@ -73,6 +73,19 @@ const Client = ({ onClose }: ClientProps) => {
           </select>
         </span>
 
+        <span className="w-full">
+          <label htmlFor="email">Email</label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            required
+            placeholder="Enter your email"
+            autoComplete="email"
+            className="w-full rounded-lg border border-gray-300 px-4 py-2.5"
+          />
+        </span>
+
         <button
           type="submit"
           disabled={isPending}

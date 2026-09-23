@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { supabase } from '@/lib/server'
+import { notifyTicketsNearTurn } from '@/lib/email'
 
 export async function serveNextPending(_formData: FormData): Promise<void> {
     const { data: servingTicket, error: servingError } = await supabase
@@ -57,6 +58,7 @@ export async function serveNextPending(_formData: FormData): Promise<void> {
     }
 
     console.log('Ticket status updated:', updatedTicket)
+    await notifyTicketsNearTurn()
     revalidatePath('/admin/main')
     revalidatePath('/', 'layout')
 }

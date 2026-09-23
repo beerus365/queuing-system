@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { supabase } from '@/lib/server'
 import { createTicketNumber } from '@/lib/ticket'
 import { getEstimatedTime } from '@/components/estimated_time'
+import { notifyTicketsNearTurn } from '@/lib/email'
 
 export type QueueState = { error?: string; ticketNumber?: string; totalWaitingMinutes?: number } | null
 
@@ -19,11 +20,16 @@ export async function createQueue(
   formData: FormData
 ): Promise<QueueState> {
   const name = String(formData.get('name') ?? '').trim()
+  const email = String(formData.get('email') ?? '').trim().toLowerCase()
   const service = String(formData.get('transaction_type') ?? '')
   const status = 'Pending'
 
-  if (!name || !service) {
-    return { error: 'Name and service are required.' }
+  if (!name || !email || !service) {
+    return { error: 'Name, email, and service are required.' }
+  }
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return { error: 'Please enter a valid email address.' }
   }
 
   const { data: pendingQueue, error: queueError } = await supabase
@@ -45,9 +51,11 @@ export async function createQueue(
     .from('user')
     .insert({
       name,
+      email,
       transaction_type: service,
       transaction_date: new Date().toLocaleString(),
-      status: status
+      status: status,
+      near_turn_notified: false
     })
     .select('number, ticket_number')
     .single()
@@ -56,6 +64,7 @@ export async function createQueue(
 
   revalidatePath('/', 'layout')
   revalidatePath('/admin/main')
+  await notifyTicketsNearTurn()
 
   return {
     ticketNumber: createTicketNumber(data.ticket_number),
