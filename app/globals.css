@@ -31,10 +31,32 @@
   }
 }
 
+@media (max-height: 600px) {
+  :root {
+    --font-poppins: "Poppins", sans-serif;
+    --font-geist-mono: "Geist Mono", monospace;
+  }
+  html,
+  body {
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+  }
+}
+
 body {
   background-color: var(--background);
   color: var(--text-color);
   font-family: var(--font-poppins), sans-serif;
+}
+
+.scrollbar-hidden {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none;
 }
 
 .card {

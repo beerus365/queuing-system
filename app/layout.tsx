@@ -26,7 +26,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${poppins.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="flex min-h-full flex-col pt-30 sm:pt-22">
+      <body className="flex h-screen flex-col overflow-hidden pt-30 sm:pt-22">
         <Header />
         {children}
       </body>
