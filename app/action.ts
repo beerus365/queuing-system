@@ -121,7 +121,7 @@ export async function estimateWaitTime(
   }
 
   const waitingMinutes = queue
-    .filter((ticket) => ticket.number <= matchedTicket.number)
+    .filter((ticket) => ticket.status === 'Pending' && ticket.number <= matchedTicket.number)
     .reduce((sum, ticket) => sum + getEstimatedTime(ticket.transaction_type ?? ''), 0)
 
   return {
