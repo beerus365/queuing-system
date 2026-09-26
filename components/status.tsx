@@ -41,7 +41,9 @@ export async function serveNextPending(_formData: FormData): Promise<void> {
     }
 
     if (!data || data.length === 0) {
-        throw new Error('No tickets with status Pending were found.')
+        revalidatePath('/admin/main')
+        revalidatePath('/', 'layout')
+        return
     }
 
     const firstTicket = data[0]
