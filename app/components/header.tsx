@@ -5,7 +5,7 @@ const Header = async () => {
 
     return (
         <header className="fixed inset-x-0 top-0 z-60 flex flex-col gap-4 bg-foreground px-4 py-4 text-white sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-8">
-            <div className="flex min-w-0 flex-row items-center justify-center gap-2 sm:gap-4">
+            <div className="flex min-w-0 flex-row sm:items-center sm:justify-start gap-2 sm:gap-4">
                 <svg
                     viewBox="0 0 550 300"
                     className="h-8 w-auto shrink-0 sm:h-12"
