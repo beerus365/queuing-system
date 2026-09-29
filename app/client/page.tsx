@@ -23,7 +23,7 @@ const Client = ({ onClose }: ClientProps) => {
 
   return (
     <main
-      className={`fixed inset-0 z-50 flex min-h-screen w-full items-center justify-center backdrop-blur-sm overflow-y-auto px-4 py-8 sm:px-6 sm:py-12 transition-colors duration-200 ${
+      className={`fixed inset-0 z-70 flex min-h-screen w-full items-center justify-center backdrop-blur-sm overflow-y-auto px-4 py-8 sm:px-6 sm:py-12 transition-colors duration-200 ${
         show ? 'bg-black/50' : 'bg-black/0'
       }`}
       onClick={handleClose}
@@ -101,6 +101,11 @@ const Client = ({ onClose }: ClientProps) => {
             <p className="text-2xl font-bold text-button-bg">{state.ticketNumber}</p>
             <p className="mt-2 text-sm text-gray-700">
               Estimated waiting time: <span className="font-semibold">{state.totalWaitingMinutes ?? 0} min</span>
+            </p>
+            <p className="mt-2 text-sm text-gray-600">
+              {state.emailSent
+                ? 'A copy of your queue number was sent to your email.'
+                : 'We could not send the email. Please save your queue number.'}
             </p>
           </div>
         )}

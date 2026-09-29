@@ -4,9 +4,16 @@ import { revalidatePath } from 'next/cache'
 import { supabase } from '@/lib/server'
 import { createTicketNumber } from '@/lib/ticket'
 import { getEstimatedTime } from '@/components/estimated_time'
-import { notifyTicketsNearTurn } from '@/lib/email'
+import { notifyTicketsNearTurn, sendQueueConfirmationEmail, sendQueueRecoveryEmail } from '@/lib/email'
 
-export type QueueState = { error?: string; ticketNumber?: string; totalWaitingMinutes?: number } | null
+export type QueueState = {
+  error?: string
+  ticketNumber?: string
+  totalWaitingMinutes?: number
+  emailSent?: boolean
+} | null
+
+export type QueueRecoveryState = { error?: string; message?: string } | null
 
 export type EstimateWaitState = {
   error?: string
@@ -62,6 +69,22 @@ export async function createQueue(
 
   if (error) return { error: error.message }
 
+  const ticketNumber = createTicketNumber(data.ticket_number)
+  let emailSent = true
+
+  try {
+    await sendQueueConfirmationEmail({
+      name,
+      email,
+      ticketNumber,
+      transactionType: service,
+      waitingMinutes: totalWaitingMinutes
+    })
+  } catch (emailError) {
+    emailSent = false
+    console.error('Queue confirmation email failed:', emailError)
+  }
+
   revalidatePath('/', 'layout')
   revalidatePath('/admin/main')
 
@@ -72,9 +95,51 @@ export async function createQueue(
   }
 
   return {
-    ticketNumber: createTicketNumber(data.ticket_number),
-    totalWaitingMinutes
+    ticketNumber,
+    totalWaitingMinutes,
+    emailSent
   }
+}
+
+export async function recoverQueueByEmail(
+  _prevState: QueueRecoveryState,
+  formData: FormData
+): Promise<QueueRecoveryState> {
+  const email = String(formData.get('email') ?? '').trim().toLowerCase()
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return { error: 'Please enter a valid email address.' }
+  }
+
+  const genericMessage = 'If an active ticket is registered to that email, its details will be sent there.'
+  const { data: tickets, error } = await supabase
+    .from('user')
+    .select('number, ticket_number, transaction_type, status')
+    .eq('email', email)
+    .in('status', ['Pending', 'Serving'])
+    .order('number', { ascending: true })
+
+  if (error) {
+    console.error(`Queue recovery lookup failed: ${error.message}`)
+    return { message: genericMessage }
+  }
+
+  if (tickets.length > 0) {
+    try {
+      await sendQueueRecoveryEmail(
+        email,
+        tickets.map((ticket) => ({
+          ticketNumber: createTicketNumber(ticket.ticket_number),
+          transactionType: ticket.transaction_type ?? 'Service',
+          status: ticket.status
+        }))
+      )
+    } catch (emailError) {
+      console.error('Queue recovery email failed:', emailError)
+    }
+  }
+
+  return { message: genericMessage }
 }
 
 export async function estimateWaitTime(

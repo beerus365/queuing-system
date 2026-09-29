@@ -6,6 +6,12 @@ type QueueTicket = {
   near_turn_notified: boolean | null
 }
 
+type QueueRecoveryTicket = {
+  ticketNumber: string
+  transactionType: string
+  status: string
+}
+
 async function sendEmail(to: string, subject: string, text: string) {
   const apiKey = process.env.RESEND_API_KEY
   const from = process.env.RESEND_FROM_EMAIL
@@ -27,6 +33,32 @@ async function sendEmail(to: string, subject: string, text: string) {
     const details = await response.text()
     throw new Error(`Resend request failed with status ${response.status}: ${details}`)
   }
+}
+
+export async function sendQueueConfirmationEmail(ticket: {
+  name: string
+  email: string
+  ticketNumber: string
+  transactionType: string
+  waitingMinutes: number
+}) {
+  await sendEmail(
+    ticket.email,
+    `Your queue ticket ${ticket.ticketNumber}`,
+    `Hello ${ticket.name},\n\nYour queue ticket is ${ticket.ticketNumber}.\nService: ${ticket.transactionType}\nEstimated waiting time: ${ticket.waitingMinutes} minutes\n\nKeep this email so you can check your ticket later.`
+  )
+}
+
+export async function sendQueueRecoveryEmail(to: string, tickets: QueueRecoveryTicket[]) {
+  const ticketDetails = tickets
+    .map((ticket) => `${ticket.ticketNumber} | ${ticket.transactionType} | ${ticket.status}`)
+    .join('\n')
+
+  await sendEmail(
+    to,
+    'Your active queue ticket details',
+    `Here are the active queue tickets registered to this email:\n\n${ticketDetails}\n\nUse a ticket number above to check its waiting time.`
+  )
 }
 
 export async function notifyTicketsNearTurn() {

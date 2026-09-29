@@ -2,13 +2,14 @@
 
 import { useActionState, useEffect, useState } from 'react'
 import Client from '@/app/client/page'
-import { estimateWaitTime } from '@/app/action'
+import { estimateWaitTime, recoverQueueByEmail } from '@/app/action'
 
 export default function QueueButton() {
   const [isOpen, setIsOpen] = useState(false)
   const [isWaitTimeOpen, setIsWaitTimeOpen] = useState(false)
   const [isWaitTimeVisible, setIsWaitTimeVisible] = useState(false)
   const [waitState, waitFormAction, isWaitPending] = useActionState(estimateWaitTime, null)
+  const [recoveryState, recoveryFormAction, isRecoveryPending] = useActionState(recoverQueueByEmail, null)
 
   useEffect(() => {
     if (!isWaitTimeOpen) {
@@ -46,7 +47,7 @@ export default function QueueButton() {
 
       {isWaitTimeOpen && (
         <div
-          className={`fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm transition-opacity duration-200 ${
+          className={`fixed inset-0 z-70 flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm transition-opacity duration-200 ${
             isWaitTimeVisible ? 'opacity-100' : 'opacity-0'
           }`}
           onClick={closeWaitTimeModal}
@@ -84,11 +85,50 @@ export default function QueueButton() {
               <button
                 type="submit"
                 disabled={isWaitPending}
-                className="w-full rounded-lg bg-button-bg px-4 py-3 text-white transition hover:bg-button-hover disabled:opacity-50"
+                className="w-full rounded-lg bg-button-bg px-4 py-3 text-white transition hover:bg-button-hover cursor-pointer disabled:opacity-50"
               >
                 {isWaitPending ? 'Checking...' : 'Check Time'}
               </button>
             </form>
+
+            <details className="mt-5 border-t border-gray-200 pt-4">
+              <summary className="cursor-pointer text-sm font-medium text-gray-700">
+                Forgot your queue number?
+              </summary>
+              <form action={recoveryFormAction} className="mt-3 space-y-3">
+                <label htmlFor="recovery_email" className="block text-sm text-gray-600">
+                  Enter the email address used when joining the queue
+                </label>
+                <input
+                  id="recovery_email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  placeholder="you@example.com"
+                  className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-button-bg"
+                />
+                <button
+                  type="submit"
+                  disabled={isRecoveryPending}
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
+                >
+                  {isRecoveryPending
+                    ? 'Sending...'
+                    : recoveryState?.message
+                      ? 'Send email again'
+                      : 'Email my active ticket numbers'}
+                </button>
+                {recoveryState?.error && (
+                  <p className="text-sm text-red-600">{recoveryState.error}</p>
+                )}
+                {recoveryState?.message && (
+                  <p aria-live="polite" className="text-sm text-gray-600">
+                    {recoveryState.message} You can request it again anytime.
+                  </p>
+                )}
+              </form>
+            </details>
 
             {waitState?.error && (
               <p className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600">
@@ -97,9 +137,21 @@ export default function QueueButton() {
             )}
 
             {waitState && !waitState.error && waitState.waitingMinutes !== undefined && (
-              <div className="mt-4 rounded-lg border border-green-200 bg-green-50 p-4 text-center">
+              <div
+                className={`mt-4 rounded-lg border p-4 text-center ${
+                  waitState.status === 'Serving'
+                    ? 'border-amber-300 bg-amber-50'
+                    : 'border-green-200 bg-green-50'
+                }`}
+              >
                 <p className="text-sm text-gray-600">Ticket</p>
-                <p className="text-xl font-bold text-button-bg">{waitState.ticketNumber}</p>
+                <p
+                  className={`text-xl font-bold ${
+                    waitState.status === 'Serving' ? 'text-amber-700' : 'text-button-bg'
+                  }`}
+                >
+                  {waitState.ticketNumber}
+                </p>
                 <p className="mt-2 text-sm text-gray-700">
                   {waitState.status === 'Serving'
                     ? 'This ticket is currently being served.'
